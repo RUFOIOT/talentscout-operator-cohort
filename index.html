@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Claude Co-Work — AI Operator Cohort</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a25;
+    --border: rgba(255,255,255,0.08);
+    --accent: #6C63FF;
+    --accent2: #00D4A8;
+    --accent3: #FF6B6B;
+    --gold: #F5C842;
+    --text: #F0F0F8;
+    --muted: #8888AA;
+    --white: #ffffff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; width: 100vw; }
+
+  /* === SLIDE SYSTEM === */
+  .deck { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+  .slide { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 60px; opacity: 0; transform: translateX(60px); transition: all 0.55s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none; }
+  .slide.active { opacity: 1; transform: translateX(0); pointer-events: all; }
+  .slide.exit-left { opacity: 0; transform: translateX(-60px); }
+
+  /* === NAVIGATION === */
+  .nav { position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 20px; z-index: 100; }
+  .nav-btn { width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: var(--white); font-size: 18px; cursor: pointer; transition: all 0.2s; backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; }
+  .nav-btn:hover { background: var(--accent); border-color: var(--accent); transform: scale(1.1); }
+  .nav-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+  .nav-dots { display: flex; gap: 6px; align-items: center; }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); transition: all 0.3s; cursor: pointer; }
+  .nav-dot.active { background: var(--accent); width: 18px; border-radius: 3px; }
+
+  /* === HEADER UI === */
+  .slide-counter { position: fixed; top: 28px; right: 40px; font-size: 13px; color: var(--muted); letter-spacing: 1px; z-index: 100; }
+  .logo-badge { position: fixed; top: 28px; left: 40px; display: flex; align-items: center; gap: 10px; z-index: 100; }
+  .logo-icon { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: white; }
+  .logo-text { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.5px; }
+
+  /* === TAGS === */
+  .tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; border: 1px solid; }
+  .tag-purple { background: rgba(108,99,255,0.15); border-color: rgba(108,99,255,0.4); color: var(--accent); }
+  .tag-green  { background: rgba(0,212,168,0.12); border-color: rgba(0,212,168,0.35); color: var(--accent2); }
+  .tag-gold   { background: rgba(245,200,66,0.12); border-color: rgba(245,200,66,0.35); color: var(--gold); }
+  .tag-red    { background: rgba(255,107,107,0.12); border-color: rgba(255,107,107,0.35); color: var(--accent3); }
+
+  /* === COMMON === */
+  h1 { font-family: 'Playfair Display', serif; }
+  h2 { font-size: 42px; font-weight: 800; line-height: 1.1; }
+  h3 { font-size: 22px; font-weight: 700; }
+  .slide-content { max-width: 1100px; width: 100%; }
+  .divider { width: 40px; height: 3px; background: var(--accent); border-radius: 2px; margin: 14px 0; }
+  .divider-green { background: var(--accent2); }
+  .divider-gold  { background: var(--gold); }
+
+  /* =============================================
+     SLIDE 1 — COVER
+  ============================================= */
+  #s1 {
+    background:
+      radial-gradient(ellipse 80% 60% at 70% 40%, rgba(108,99,255,0.18) 0%, transparent 65%),
+      radial-gradient(ellipse 60% 50% at 15% 75%, rgba(0,212,168,0.10) 0%, transparent 60%),
+      var(--bg);
+  }
+  #s1::after { content:''; position:absolute; inset:0; background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px); background-size: 60px 60px; pointer-events:none; }
+  .cover-layout { display:flex; flex-direction:column; align-items:flex-start; max-width:900px; position:relative; z-index:1; }
+  .cover-eyebrow { display:flex; align-items:center; gap:12px; margin-bottom:32px; }
+  .cover-title { font-family:'Playfair Display',serif; font-size:72px; font-weight:800; line-height:1.0; letter-spacing:-1px; margin-bottom:24px; }
+  .cover-title span { color:var(--accent); }
+  .cover-subtitle { font-size:17px; color:var(--muted); line-height:1.6; max-width:540px; margin-bottom:40px; }
+  .cover-stats { display:flex; gap:32px; flex-wrap:wrap; }
+  .cover-stat { display:flex; flex-direction:column; }
+  .cs-num { font-size:36px; font-weight:900; color:var(--white); line-height:1; }
+  .cs-label { font-size:12px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-top:4px; }
+  .ts-badge { display:inline-flex; align-items:center; gap:8px; padding:7px 16px; background:var(--surface); border:1px solid var(--border); border-radius:20px; font-size:12px; font-weight:700; color:var(--muted); letter-spacing:0.5px; }
+  .ts-dot { width:8px; height:8px; border-radius:50%; background:var(--accent2); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+  .cover-divider { width:60px; height:2px; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:2px; margin-bottom:32px; }
+
+  /* =============================================
+     SLIDE 2 — THESIS
+  ============================================= */
+  #s2 { background: var(--bg); }
+  .thesis-layout { display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:center; }
+  .ts-quote { font-size:28px; font-weight:700; line-height:1.35; color:var(--white); margin-bottom:20px; }
+  .ts-text { font-size:14px; color:var(--muted); line-height:1.7; margin-bottom:16px; }
+  .thesis-right { display:flex; flex-direction:column; gap:16px; }
+  .thesis-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px 22px; }
+  .tc-label { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+  .tc-value { font-size:14px; font-weight:600; color:var(--text); line-height:1.5; }
+  .tc-value strong { color:var(--accent2); }
+
+  /* =============================================
+     SLIDE 3 — FACILITATOR
+  ============================================= */
+  #s3 { background: var(--bg); }
+  .fac-layout { display:grid; grid-template-columns:1fr 1.5fr; gap:60px; align-items:center; max-width:1000px; }
+  .fac-avatar { width:180px; height:180px; border-radius:24px; background:linear-gradient(135deg,var(--accent),var(--accent2)); display:flex; align-items:center; justify-content:center; font-size:72px; margin-bottom:20px; }
+  .fac-name { font-size:28px; font-weight:800; margin-bottom:4px; }
+  .fac-title { font-size:13px; color:var(--accent2); font-weight:600; letter-spacing:0.5px; margin-bottom:16px; }
+  .fac-creds { display:flex; flex-direction:column; gap:8px; }
+  .fac-cred { display:flex; align-items:flex-start; gap:10px; font-size:13px; color:var(--muted); }
+  .fac-cred-icon { font-size:16px; flex-shrink:0; }
+  .fac-right { display:flex; flex-direction:column; gap:16px; }
+  .fac-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px; }
+  .fac-card-label { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+  .fac-card-text { font-size:13px; color:var(--text); line-height:1.6; }
+
+  /* =============================================
+     SLIDE 4 — COURSE OVERVIEW
+  ============================================= */
+  #s4 { background: var(--bg); }
+  .overview-layout { display:grid; grid-template-columns:1fr 1fr; gap:50px; align-items:center; max-width:1050px; }
+  .overview-stats { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:24px; }
+  .ostat { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px; text-align:center; }
+  .ostat-num { font-size:42px; font-weight:900; color:var(--accent); line-height:1; margin-bottom:4px; }
+  .ostat-label { font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.8px; }
+  .overview-deliverables { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px; }
+  .od-title { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:14px; }
+  .od-list { list-style:none; display:flex; flex-direction:column; gap:9px; }
+  .od-list li { display:flex; align-items:flex-start; gap:10px; font-size:13px; color:var(--text); line-height:1.45; }
+  .od-check { color:var(--accent2); font-size:14px; flex-shrink:0; margin-top:1px; }
+  .overview-new-box { margin-top:16px; background:rgba(108,99,255,0.08); border:1px solid rgba(108,99,255,0.2); border-radius:12px; padding:14px 16px; }
+  .onb-label { font-size:10px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+  .onb-text { font-size:12px; color:var(--muted); line-height:1.6; }
+
+  /* =============================================
+     SLIDE 5 — WEEKLY CURRICULUM LIST
+  ============================================= */
+  #s5 { background: var(--bg); }
+  .week-list { display:flex; flex-direction:column; gap:10px; }
+  .week-row { display:flex; align-items:flex-start; gap:14px; padding:14px 16px; background:var(--surface); border:1px solid var(--border); border-radius:12px; transition:all 0.2s; }
+  .week-row:hover { border-color:rgba(108,99,255,0.35); }
+  .week-row-num { min-width:52px; height:26px; border-radius:6px; background:rgba(108,99,255,0.15); color:var(--accent); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; letter-spacing:1px; flex-shrink:0; }
+  .week-row-title { font-size:14px; font-weight:700; margin-bottom:4px; }
+  .week-row-items { font-size:12px; color:var(--muted); line-height:1.55; }
+  .week-row-deliverable { margin-top:6px; font-size:11px; font-weight:700; color:var(--accent); }
+  .curriculum-header { margin-bottom:22px; }
+
+  /* =============================================
+     SLIDE 6 — CURRICULUM DETAIL GRID
+  ============================================= */
+  #s6 { background: var(--bg); }
+  .curriculum-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:15px; max-width:1100px; }
+  .week-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px 16px; position:relative; overflow:hidden; transition:transform 0.2s; }
+  .week-card:hover { transform:translateY(-4px); }
+  .week-card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; }
+  .week-card:nth-child(1)::before { background:var(--accent2); }
+  .week-card:nth-child(2)::before { background:var(--accent); }
+  .week-card:nth-child(3)::before { background:var(--gold); }
+  .week-card:nth-child(4)::before { background:var(--accent3); }
+  .week-num { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-bottom:8px; }
+  .week-card:nth-child(1) .week-num { color:var(--accent2); }
+  .week-card:nth-child(2) .week-num { color:var(--accent); }
+  .week-card:nth-child(3) .week-num { color:var(--gold); }
+  .week-card:nth-child(4) .week-num { color:var(--accent3); }
+  .week-title { font-size:14px; font-weight:700; margin-bottom:10px; line-height:1.3; }
+  .week-items { list-style:none; display:flex; flex-direction:column; gap:6px; }
+  .week-items li { font-size:11px; color:var(--muted); line-height:1.4; padding-left:13px; position:relative; }
+  .week-card:nth-child(1) .week-items li::before { content:'→'; position:absolute; left:0; color:var(--accent2); font-size:10px; }
+  .week-card:nth-child(2) .week-items li::before { content:'→'; position:absolute; left:0; color:var(--accent); font-size:10px; }
+  .week-card:nth-child(3) .week-items li::before { content:'→'; position:absolute; left:0; color:var(--gold); font-size:10px; }
+  .week-card:nth-child(4) .week-items li::before { content:'→'; position:absolute; left:0; color:var(--accent3); font-size:10px; }
+  .week-deliverable { margin-top:12px; padding-top:10px; border-top:1px solid var(--border); font-size:11px; font-weight:700; }
+  .week-card:nth-child(1) .week-deliverable { color:var(--accent2); }
+  .week-card:nth-child(2) .week-deliverable { color:var(--accent); }
+  .week-card:nth-child(3) .week-deliverable { color:var(--gold); }
+  .week-card:nth-child(4) .week-deliverable { color:var(--accent3); }
+  .new-badge { display:inline-block; padding:2px 7px; background:rgba(245,200,66,0.15); border:1px solid rgba(245,200,66,0.3); border-radius:4px; font-size:9px; font-weight:700; color:var(--gold); letter-spacing:0.5px; margin-top:6px; margin-right:4px; }
+
+  /* =============================================
+     SLIDE 7 — CLAUDE CO-WORK SHINES
+  ============================================= */
+  #s7 { background: var(--bg); }
+  .shine-layout { display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:center; }
+  .shine-points { display:flex; flex-direction:column; gap:18px; }
+  .shine-point { display:flex; align-items:flex-start; gap:16px; }
+  .shine-emoji { font-size:24px; flex-shrink:0; }
+  .shine-title { font-size:14px; font-weight:700; margin-bottom:4px; }
+  .shine-desc { font-size:12px; color:var(--muted); line-height:1.6; }
+  .artifact-preview { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:24px; }
+  .ap-label { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }
+  .ap-browser { background:var(--surface2); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .ap-bar { background:var(--bg); padding:10px 14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--border); }
+  .ap-dot { width:10px; height:10px; border-radius:50%; }
+  .ap-url { background:var(--surface); border-radius:6px; padding:4px 12px; font-size:10px; color:var(--muted); flex:1; text-align:center; }
+  .ap-content { padding:20px; display:flex; flex-direction:column; gap:10px; }
+  .ap-row { height:10px; background:var(--border); border-radius:4px; }
+
+  /* =============================================
+     SLIDE 8 — CURATED STACK
+  ============================================= */
+  #s8 { background: var(--bg); }
+  .stack-grid-layout { display:grid; grid-template-columns:1fr 1fr; gap:50px; align-items:start; }
+  .curated-layers { display:flex; flex-direction:column; gap:10px; margin-top:16px; }
+  .curated-layer { display:flex; align-items:center; gap:14px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:12px; }
+  .curated-layer.primary { border-color:rgba(108,99,255,0.3); }
+  .cl-icon { font-size:20px; flex-shrink:0; }
+  .cl-name { font-size:13px; font-weight:700; margin-bottom:2px; }
+  .cl-desc { font-size:11px; color:var(--muted); line-height:1.4; }
+  .cl-badge { padding:3px 8px; border-radius:4px; font-size:9px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; flex-shrink:0; margin-left:auto; }
+  .cl-badge.core { background:rgba(108,99,255,0.15); color:var(--accent); }
+  .cl-badge.intro { background:rgba(245,200,66,0.15); color:var(--gold); }
+  .cl-badge.proven { background:rgba(0,212,168,0.12); color:var(--accent2); }
+  .curated-sidebar { display:flex; flex-direction:column; gap:16px; }
+  .curated-box { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px; }
+  .curated-box-title { font-size:12px; font-weight:700; margin-bottom:12px; }
+  .skill-chips { display:flex; flex-wrap:wrap; gap:7px; }
+  .skill-chip { padding:5px 10px; border-radius:8px; font-size:11px; font-weight:600; background:var(--surface2); border:1px solid var(--border); }
+  .curated-promise { background:rgba(0,212,168,0.06); border:1px solid rgba(0,212,168,0.2); border-radius:12px; padding:14px 16px; font-size:12px; color:var(--muted); line-height:1.6; }
+  .curated-promise span { color:var(--accent2); font-weight:600; }
+
+  /* =============================================
+     SLIDE 9 — SHOW & TELL
+  ============================================= */
+  #s9 { background: var(--bg); }
+  .showntell-layout { display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:start; }
+  .demo-phases { display:flex; flex-direction:column; gap:16px; margin-bottom:20px; }
+  .demo-phase { display:flex; gap:16px; align-items:flex-start; }
+  .demo-time { font-size:11px; font-weight:700; color:var(--accent); background:rgba(108,99,255,0.1); border:1px solid rgba(108,99,255,0.25); border-radius:6px; padding:4px 10px; white-space:nowrap; flex-shrink:0; }
+  .demo-phase-title { font-size:13px; font-weight:700; margin-bottom:3px; }
+  .demo-phase-desc { font-size:12px; color:var(--muted); line-height:1.5; }
+  .showntell-right { display:flex; flex-direction:column; gap:14px; }
+  .snt-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px 20px; }
+  .snt-emoji { font-size:24px; margin-bottom:8px; }
+  .snt-title { font-size:13px; font-weight:700; margin-bottom:4px; }
+  .snt-desc { font-size:12px; color:var(--muted); line-height:1.5; }
+
+  /* =============================================
+     SLIDE 10 — WHO IT'S FOR
+  ============================================= */
+  #s10 { background: var(--bg); }
+  .who-single-layout { display:grid; grid-template-columns:1fr 1fr; gap:50px; align-items:center; max-width:1000px; }
+  .who-profiles { display:flex; flex-direction:column; gap:10px; }
+  .who-profile { display:flex; align-items:flex-start; gap:14px; padding:14px 16px; background:var(--surface); border:1px solid var(--border); border-radius:12px; }
+  .who-profile-icon { font-size:24px; flex-shrink:0; }
+  .who-profile-role { font-size:13px; font-weight:700; margin-bottom:3px; }
+  .who-profile-desc { font-size:12px; color:var(--muted); line-height:1.45; }
+  .who-prereq-box { margin-top:20px; padding:16px 18px; background:rgba(0,212,168,0.06); border:1px solid rgba(0,212,168,0.2); border-radius:12px; }
+  .wpb-label { font-size:10px; font-weight:700; color:var(--accent2); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+  .wpb-text { font-size:13px; color:var(--text); line-height:1.6; }
+  .who-not-box { margin-top:12px; padding:16px 18px; background:rgba(255,107,107,0.05); border:1px solid rgba(255,107,107,0.2); border-radius:12px; }
+  .wnb-label { font-size:10px; font-weight:700; color:var(--accent3); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+  .wnb-text { font-size:13px; color:var(--muted); line-height:1.6; }
+
+  /* =============================================
+     SLIDE 11 — FLYWHEEL
+  ============================================= */
+  #s11 { background: var(--bg); }
+  .flywheel-layout { display:grid; grid-template-columns:1.2fr 1fr; gap:60px; align-items:center; }
+  .flywheel-benefits { display:flex; flex-direction:column; gap:16px; }
+  .fb-item { display:flex; align-items:flex-start; gap:14px; }
+  .fb-emoji { font-size:22px; flex-shrink:0; }
+  .fb-title { font-size:13px; font-weight:700; margin-bottom:3px; }
+  .fb-desc { font-size:12px; color:var(--muted); line-height:1.5; }
+  .flywheel-visual { display:flex; align-items:center; justify-content:center; }
+  .circle-outer { position:relative; width:260px; height:260px; border-radius:50%; border:1px dashed rgba(108,99,255,0.3); display:flex; align-items:center; justify-content:center; }
+  .circle-inner { width:110px; height:110px; background:var(--surface); border:1px solid rgba(108,99,255,0.3); border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--muted); text-align:center; gap:3px; }
+  .circle-inner span { font-size:22px; }
+  .fw-node { position:absolute; display:flex; flex-direction:column; align-items:center; gap:3px; font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .fw-node:nth-child(1) { top:-16px; left:50%; transform:translateX(-50%); }
+  .fw-node:nth-child(2) { right:-20px; top:50%; transform:translateY(-50%); }
+  .fw-node:nth-child(3) { bottom:-16px; left:50%; transform:translateX(-50%); }
+  .fw-node:nth-child(4) { left:-20px; top:50%; transform:translateY(-50%); }
+  .fw-node-emoji { font-size:20px; }
+
+  /* =============================================
+     SLIDE 12 — CTA
+  ============================================= */
+  #s12 {
+    background:
+      radial-gradient(ellipse 70% 60% at 50% 40%, rgba(108,99,255,0.15) 0%, transparent 65%),
+      var(--bg);
+  }
+  .cta-inner { display:flex; flex-direction:column; align-items:center; text-align:center; max-width:800px; }
+  .cta-title { font-family:'Playfair Display',serif; font-size:64px; font-weight:800; line-height:1.0; margin-bottom:16px; }
+  .cta-title span { color:var(--accent); }
+  .cta-sub { font-size:15px; color:var(--muted); line-height:1.7; max-width:540px; margin-bottom:36px; }
+  .cta-single-box { background:var(--surface); border:1px solid rgba(108,99,255,0.3); border-radius:20px; padding:28px 36px; margin-bottom:28px; width:100%; max-width:520px; }
+  .csb-label { font-size:10px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:10px; }
+  .csb-title { font-size:22px; font-weight:800; margin-bottom:8px; }
+  .csb-desc { font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:16px; }
+  .csb-stats { display:flex; justify-content:center; gap:24px; }
+  .csb-stat { font-size:12px; color:var(--muted); }
+  .csb-stat strong { color:var(--text); display:block; font-size:20px; font-weight:800; }
+  .tags-row { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:20px; }
+  .cta-footer { font-size:13px; color:var(--muted); }
+  .cta-footer strong { color:var(--text); }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 900px) {
+    .curriculum-grid{grid-template-columns:1fr 1fr;}
+    .thesis-layout,.fac-layout,.overview-layout,.shine-layout,.stack-grid-layout,.showntell-layout,.flywheel-layout,.who-single-layout{grid-template-columns:1fr;}
+    h2{font-size:28px;}
+    .cover-title{font-size:44px;}
+    .cta-title{font-size:40px;}
+    .slide{padding:32px 24px 80px;}
+  }
+</style>
+</head>
+<body>
+<div class="logo-badge">
+  <div class="logo-icon">TS</div>
+  <div class="logo-text">Talent Scout × Claude Co-Work</div>
+</div>
+<div class="slide-counter"><span id="current">1</span> / <span id="total"></span></div>
+
+<div class="deck">
+
+<!-- ============================================================
+     SLIDE 1 — COVER
+============================================================ -->
+<div class="slide active" id="s1">
+  <div class="cover-layout">
+    <div class="cover-eyebrow">
+      <div class="ts-badge"><div class="ts-dot"></div>Cohort 1 · Now Enrolling</div>
+      <div class="tag tag-purple">The AI Operator Program</div>
+    </div>
+    <h1 class="cover-title">Build an AI<br/><span>Operator Stack.</span></h1>
+    <div class="cover-divider"></div>
+    <p class="cover-subtitle">Four weeks. Eight live sessions. One complete system — workspaces, agents, automations, knowledge bases, and a front-end artifact you build live.</p>
+    <div class="cover-stats">
+      <div class="cover-stat">
+        <div class="cs-num">4</div>
+        <div class="cs-label">Weeks</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cs-num">16</div>
+        <div class="cs-label">Live Hours</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cs-num">8</div>
+        <div class="cs-label">Sessions</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cs-num">85%+</div>
+        <div class="cs-label">Hands-On Build Time</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SLIDE 2 — THE THESIS
+============================================================ -->
+<div class="slide" id="s2">
+  <div class="thesis-layout slide-content">
+    <div>
+      <div class="tag tag-purple" style="margin-bottom:18px">The Problem</div>
+      <div class="ts-quote">"Most people are still copy-pasting into ChatGPT. Every session starts blank."</div>
+      <div class="divider"></div>
+      <p class="ts-text">No context. No system. No structure. Output is generic. Nothing compounds. Hours spent re-explaining the same thing to AI that forgets you the moment the tab closes.</p>
+      <p class="ts-text">Teams pulling ahead aren't replacing people. They're building fluent operators. The AI isn't the differentiator. The co-work skill is.</p>
+    </div>
+    <div class="thesis-right">
+      <div class="thesis-card">
+        <div class="tc-label">What changes after 4 weeks</div>
+        <div class="tc-value">You go from <strong>reactive user</strong> to <strong>system builder</strong>. Your AI works while you sleep, remembers your brand, and ships things you used to outsource.</div>
+      </div>
+      <div class="thesis-card">
+        <div class="tc-label">The real differentiator</div>
+        <div class="tc-value">The best AI models are <strong>accessible to everyone</strong>. The operators who know how to build with them <strong>are not</strong>.</div>
+      </div>
+      <div class="thesis-card">
+        <div class="tc-label">Why now</div>
+        <div class="tc-value">The window to be an early operator is <strong>closing fast</strong>. This cohort is designed to get you there in 4 weeks — not 4 months.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SLIDE 3 — FACILITATOR
+============================================================ -->
+<div class="slide" id="s3">
+  <div class="fac-layout slide-content">
+    <div>
+      <div class="fac-avatar">🧑‍💻</div>
+      <div class="fac-name">Felipe Salgado</div>
+      <div class="fac-title">Engineer · AI Strategist · Operator</div>
+      <div class="fac-creds">
+        <div class="fac-cred"><span class="fac-cred-icon">🏔️</span><span>ETHDenver mentor — blockchain + AI education</span></div>
+        <div class="fac-cred"><span class="fac-cred-icon">🌎</span><span>UNICEF Chile AI advisor — enterprise AI strategy</span></div>
+        <div class="fac-cred"><span class="fac-cred-icon">🎓</span><span>Eight Academy founder — AI curriculum design</span></div>
+        <div class="fac-cred"><span class="fac-cred-icon">🏢</span><span>Built AI automation stacks for corporate teams in Ecuador</span></div>
+      </div>
+    </div>
+    <div class="fac-right">
+      <div class="fac-card">
+        <div class="fac-card-label">Why Felipe teaches this</div>
+        <div class="fac-card-text">Felipe doesn't teach theory. He teaches from production stacks he built himself — the same tools, templates, and automations participants will deploy during the cohort.</div>
+      </div>
+      <div class="fac-card">
+        <div class="fac-card-label">Teaching philosophy</div>
+        <div class="fac-card-text">85%+ build time. Every session produces a working artifact — not slides, not notes. Participants leave with a deployed system, not a certificate of attendance.</div>
+      </div>
+      <div class="fac-card">
+        <div class="fac-card-label">Track record</div>
+        <div class="fac-card-text">Delivered AI operator training to marketing and sales teams across LATAM. UNICEF Chile demo validated the approach with enterprise-level scrutiny.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SLIDE 4 — COURSE OVERVIEW
+============================================================ -->
+<div class="slide" id="s4">
+  <div class="overview-layout slide-content">
+    <div>
+      <div class="tag tag-purple" style="margin-bottom:14px">The Program</div>
+      <h2 style="font-size:36px;margin-bottom:8px">The complete<br/>Marketing Operator Stack.</h2>
+      <div class="divider"></div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.6">Six layers assembled live. Agents. Automations. Knowledge bases. A front-end artifact built with Claude. The full stack — and a certificate to prove it.</p>
+      <div class="overview-stats">
+        <div class="ostat"><div class="ostat-num">4</div><div class="ostat-label">Weeks</div></div>
+        <div class="ostat"><div class="ostat-num">16</div><div class="ostat-label">Live Hours</div></div>
+        <div class="ostat"><div class="ostat-num">8</div><div class="ostat-label">Sessions</div></div>
+        <div class="ostat"><div class="ostat-num">85%+</div><div class="ostat-label">Build Time</div></div>
+      </div>
+      <div class="overview-new-box">
+        <div class="onb-label">What's included</div>
+        <div class="onb-text">Pre-session theory videos · Weekly office hours · MCP dedicated module · Front-end HTML artifact deliverable · AI tool landscape module · Expandable workspace model (3→5)</div>
+      </div>
+    </div>
+    <div class="overview-deliverables">
+      <div class="od-title">What you walk away with</div>
+      <ul class="od-list">
+        <li><span class="od-check">✓</span><span>3–5 specialized Claude Co-Work workspaces</span></li>
+        <li><span class="od-check">✓</span><span>20+ production-grade RCTFX prompts documented</span></li>
+        <li><span class="od-check">✓</span><span>1 marketing agent deployed with real data</span></li>
+        <li><span class="od-check">✓</span><span>2+ active automations (daily + weekly)</span></li>
+        <li><span class="od-check">✓</span><span>2 knowledge bases loaded and on-brand verified</span></li>
+        <li><span class="od-check">✓</span><span>Front-end HTML artifact — built live, deployed to URL</span></li>
+        <li><span class="od-check">✓</span><span>Complete governance playbook</span></li>
+        <li><span class="od-check">✓</span><span>AI Operator Certificate — Talent Scout</span></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SLIDE 5 — CURRICULUM LIST VIEW
+============================================================ -->
+<div class="slide" id="s5">
+  <div class="slide-content">
+    <div class="curriculum-header">
+      <div class="tag tag-purple" style="margin-bottom:10px">4-Week Curriculum</div>
+      <h2 style="font-size:32px">One arc. Four builds.<br/>Zero fluff.</h2>
+    </div>
+    <div class="week-list">
+      <div class="week-row">
+        <div class="week-row-num">WK 01</div>
+        <div>
+          <div class="week-row-title">AI Landscape + 3 Workspaces + MCP Intro</div>
+          <div class="week-row-items">Tool comparison module · Pre-session theory video · 3 specialized workspaces (Research, Content, Operations) · Claude Co-Work Projects deep training · MCP overview and connector marketplace · Vocabulary: Artifacts, Skills, Projects, Agents, Stack · Workspace model expandable to 4–5</div>
+          <div class="week-row-deliverable">🎯 3 connected workspaces + project architecture</div>
+        </div>
+      </div>
+      <div class="week-row">
+        <div class="week-row-num">WK 02</div>
+        <div>
+          <div class="week-row-title">RCTFX Mastery + First Agent</div>
+          <div class="week-row-items">RCTFX anchored to production contexts: system instructions, agent briefs, automation triggers · 5–10 production-grade system instruction templates · 20+ prompt library by category · Deploy first agent for a real recurring task · Office hours: last 30 min of session</div>
+          <div class="week-row-deliverable">🎯 20+ prompt library + 1 live agent deployed</div>
+        </div>
+      </div>
+      <div class="week-row">
+        <div class="week-row-num">WK 03</div>
+        <div>
+          <div class="week-row-title">Automation + Knowledge Base + MCP Deep Dive</div>
+          <div class="week-row-items">4 automation types: Scheduled, Skills, Artifacts, Multi-step · 2 active automations deployed · Brand + client knowledge bases loaded and tested · MCP dedicated module: Slack, Notion, Figma, Higgsfield + creative tools · Artifacts as live refreshing dashboards</div>
+          <div class="week-row-deliverable">🎯 2 automations + 2 KBs + MCP stack live</div>
+        </div>
+      </div>
+      <div class="week-row">
+        <div class="week-row-num">WK 04</div>
+        <div>
+          <div class="week-row-title">Stack Assembly + Claude Code Intro + Show &amp; Tell</div>
+          <div class="week-row-items">Full 6-layer stack assembled with checklist · Build front-end HTML artifact with Claude (live) · Claude Code 30–60 min intro: what's possible next · 3 governance rules written · 3-min live demo · Complete playbook · Certificate issued</div>
+          <div class="week-row-deliverable">🎯 Full Stack + HTML artifact + Certificate</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SLIDE 6 — CURRICULUM DETAIL GRID
+============================================================ -->
+<div class="slide" id="s6">
+  <div class="slide-content" style="max-width:1150px;">
+    <div style="margin-bottom:18px;">
+      <div class="tag tag-purple" style="margin-bottom:8px">Week-by-Week Detail</div>
+      <h2 style="font-size:26px">Every session ships something real.</h2>
+    </div>
+    <div class="curriculum-grid">
+      <div class="week-card">
+        <div class="week-num">Week 01</div>
+        <div class="week-title">AI Landscape + Workspaces + MCP Intro</div>
+        <ul class="week-items">
+          <li>Claude vs ChatGPT vs Gemini — honest comparison</li>
+          <li>Pre-session theory video (15–20 min)</li>
+          <li>3 specialized workspaces: Research · Content · Operations</li>
+          <li>Claude Co-Work Projects deep training</li>
+          <li>MCP overview: connectors, marketplace, when to use each</li>
+          <li>Operator vocabulary glossary</li>
+          <li>Workspace model: expandable 3→4–5 for complex roles</li>
+        </ul>
+        <div class="week-deliverable">🎯 3 connected workspaces + project architecture</div>
+      </div>
+      <div class="week-card">
+        <div class="week-num">Week 02</div>
+        <div class="week-title">RCTFX Mastery + First Agent</div>
+        <ul class="week-items">
+          <li>RCTFX in production: system instructions, agent briefs, automation triggers</li>
+          <li>5–10 production-grade system instruction templates</li>
+          <li>20+ prompt library by category</li>
+          <li>Deploy first agent for a real, recurring task</li>
+          <li>Marketing agent catalog: 5 roles × time saved</li>
+          <li>Office hours: last 30 min (open build support)</li>
+        </ul>
+        <div class="week-deliverable">🎯 20+ prompt library + 1 live agent</div>
+        <div><span class="new-badge">+ Office Hours</span></div>
+      </div>
+      <div class="week-card">
+        <div class="week-num">Week 03</div>
+        <div class="week-title">Automation + Knowledge Base + MCP Deep Dive</div>
+        <ul class="week-items">
+          <li>4 automation types: Scheduled, Skills, Artifacts, Multi-step</li>
+          <li>Deploy 2 automations: daily briefing + weekly digest</li>
+          <li>Knowledge base architecture: brand + client + performance</li>
+          <li>MCP deep dive: Slack, Notion, Figma, Higgsfield</li>
+          <li>Artifacts as live refreshing dashboards</li>
+          <li>Governance rules: what to never load</li>
+        </ul>
+        <div class="week-deliverable">🎯 2 automations + 2 KBs + MCP stack live</div>
+        <div><span class="new-badge">+ MCP Module</span></div>
+      </div>
+      <div class="week-card">
+        <div class="week-num">Week 04</div>
+        <div class="week-title">Stack Assembly + Claude Code + Show &amp; Tell</div>
+        <ul class="week-items">
+          <li>6-layer stack assembled with final checklist</li>
+          <li>Build front-end HTML artifact live with Claude</li>
+          <li>Deploy artifact to live URL</li>
+          <li>Claude Code 30–60 min intro: what's possible next</li>
+          <li>3 governance rules written and documented</li>
+          <li>3-minute Show &amp; Tell live demo</li>
+          <li>Complete operational playbook · Certificate issued</li>
+        </ul>
+        <div class="week-deliverable">🎯 Full Stack + HTML artifact + Certificate</div>
+        <div><span class="new-badge">+ Front-End Build</span> <span class="new-badge">+ Claude Code</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SLIDE 7 — CLAUDE CO-WORK SHINES
+============================================================ -->
+<div class="slide" id="s7">
+  <div class="shine-layout slide-content">
+    <div>
+      <div class="tag tag-purple" style="margin-bottom:18px">The Signature Deliverable</div>
+      <h2 style="font-size:34px;margin-bottom:8px">Claude Co-Work<br/>builds things that impress rooms.</h2>
+      <div class="divider"></div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6">Every participant builds a real, deployable web artifact using Claude. Not a screenshot. Not a report. A live URL they can show anyone — built entirely during the cohort.</p>
+      <div class="shine-points">
+        <div class="shine-point">
+          <span class="shine-emoji">🎨</span>
+          <div>
+            <div class="shine-title">Front-End as a First-Class Skill</div>
+            <div class="shine-desc">Participants generate polished HTML dashboards, intel briefs, and campaign reports — all built live with Claude Co-Work's artifact system. No code knowledge required.</div>
+          </div>
+        </div>
+        <div class="shine-point">
+          <span class="shine-emoji">🚀</span>
+          <div>
+            <div class="shine-title">Deployed to a Live URL</div>
+            <div class="shine-desc">Every artifact is published and accessible. Participants walk away with a portfolio piece they can send to clients, show in meetings, and present at Show &amp; Tell.</div>
+          </div>
+        </div>
+        <div class="shine-point">
+          <span class="shine-emoji">💼</span>
+          <div>
+            <div class="shine-title">Immediate Business Use</div>
+            <div class="shine-desc">Campaign performance dashboards. Competitive intel briefs. Client proposal decks. Built in the session, deployed the same day.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="artifact-preview">
+      <div class="ap-label">Week 4 deliverable — participant-built artifact</div>
+      <div class="ap-browser">
+        <div class="ap-bar">
+          <div class="ap-dot" style="background:#FF6B6B"></div>
+          <div class="ap-dot" style="background:#F5C842;margin-left:6px"></div>
+          <div class="ap-dot" style="background:#00D4A8;margin-left:6px"></div>
+          <div class="ap-url">yourname.github.io/ai-operator-artifact</div>
+        </div>
+        <div class="ap-content">
+          <div class="ap-row" style="width:60%;background:rgba(108,99,255,0.3)"></div>
+          <div class="ap-row" style="width:90%"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0">
+            <div style="height:60px;background:rgba(108,99,255,0.1);border-radius:8px;border:1px solid rgba(108,99,255,0.2)"></div>
+            <div style="height:60px;background:rgba(0,212,168,0.1);border-radius:8px;border:1px solid rgba(0,212,168,0.2)"></div>
+          </div>
+          <div class="ap-row" style="width:75%"></div>
+          <div class="ap-row" style="width:50%"></div>
+          <div style="height:32px;background:linear-gradient(90deg,rgba(108,99,255,0.4),rgba(0,212,168,0.3));border-radius:8px;margin-top:6px"></div>
+        </div>
+      </div>
+      <div style="margin-top:14px;font-size:12px;color:var(--muted);line-height:1.6">Built with Claude Co-Work's artifact system. Exported as HTML. Deployed to a live URL. No code knowledge required.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SLIDE 8 — CURATED STACK
+============================================================ -->
+<div class="slide" id="s8">
+  <div class="stack-grid-layout slide-content">
+    <div>
+      <div class="tag tag-green" style="margin-bottom:14px">The Proven Stack</div>
+      <h2 style="font-size:34px;margin-bottom:8px">Nothing untested.<br/>Everything earned.</h2>
+      <div class="divider divider-green"></div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6">You don't discover the stack during the cohort. You inherit what already works. Every tool, connector, prompt template, and skill has been battle-tested before you arrive.</p>
+      <div class="curated-layers">
+        <div class="curated-layer primary">
+          <div class="cl-icon">🧠</div>
+          <div><div class="cl-name">Claude (Anthropic)</div><div class="cl-desc">Sonnet · Haiku · Opus — the intelligence layer for all cohort work</div></div>
+          <span class="cl-badge core">Core</span>
+        </div>
+        <div class="curated-layer primary">
+          <div class="cl-icon">🖥️</div>
+          <div><div class="cl-name">Claude Co-Work</div><div class="cl-desc">Operating environment — workspaces, projects, artifacts, skills, automations</div></div>
+          <span class="cl-badge core">Primary</span>
+        </div>
+        <div class="curated-layer">
+          <div class="cl-icon">⚡</div>
+          <div><div class="cl-name">Claude Code</div><div class="cl-desc">Week 4 intro — the power layer when you're ready to go deeper</div></div>
+          <span class="cl-badge intro">Week 4 Intro</span>
+        </div>
+        <div class="curated-layer">
+          <div class="cl-icon">🔌</div>
+          <div><div class="cl-name">Slack · Notion · Google Workspace · Figma</div><div class="cl-desc">Verified MCP connectors — no-code setup, no surprises</div></div>
+          <span class="cl-badge proven">Proven MCPs</span>
+        </div>
+        <div class="curated-layer">
+          <div class="cl-icon">🎬</div>
+          <div><div class="cl-name">Higgsfield + Creative MCPs</div><div class="cl-desc">AI video and creative pipeline tools — integrated marketing workflow</div></div>
+          <span class="cl-badge proven">MCP Module</span>
+        </div>
+      </div>
+    </div>
+    <div class="curated-sidebar">
+      <div class="curated-box">
+        <div class="curated-box-title">Pre-Built Skill Library (8 proven skills)</div>
+        <div class="skill-chips">
+          <div class="skill-chip">📝 Content Repurposer</div>
+          <div class="skill-chip">🔍 Competitive Intel</div>
+          <div class="skill-chip">📊 Report Generator</div>
+          <div class="skill-chip">🎯 Brief Builder</div>
+          <div class="skill-chip">📅 Weekly Digest</div>
+          <div class="skill-chip">🤝 Meeting → Actions</div>
+          <div class="skill-chip">✍️ Brand Voice Check</div>
+          <div class="skill-chip">📣 Campaign Launcher</div>
+        </div>
+      </div>
+      <div class="curated-box">
+        <div class="curated-box-title">RCTFX Template Library (20+ templates)</div>
+        <div class="skill-chips">
+          <div class="skill-chip">📋 System Instructions ×3</div>
+          <div class="skill-chip">🤖 Agent Briefs ×4</div>
+          <div class="skill-chip">⚙️ Automation Triggers ×4</div>
+          <div class="skill-chip">📈 Analysis ×5</div>
+          <div class="skill-chip">📣 Content ×6</div>
+        </div>
+      </div>
+      <div class="curated-promise">
+        Every prompt, skill, and automation was <span>verified before the first cohort session</span>. You build on what works — not what might work.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SLIDE 9 — SHOW & TELL DEMO ENVIRONMENT
+============================================================ -->
+<div class="slide" id="s9">
+  <div class="showntell-layout slide-content">
+    <div>
+      <div class="tag tag-gold" style="margin-bottom:16px">Week 4 · Show &amp; Tell</div>
+      <h2 style="font-size:34px;margin-bottom:8px">The demo<br/>that sells itself.</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6">Every cohort ends with a live public demo — open to clients, prospects, and anyone curious. Not a graduation ceremony. A sales event disguised as a show.</p>
+      <div class="demo-phases">
+        <div class="demo-phase">
+          <div class="demo-time">0:00 – 1:00</div>
+          <div>
+            <div class="demo-phase-title">What You Built</div>
+            <div class="demo-phase-desc">Open Claude Co-Work live. Show workspaces, knowledge bases, tools connected. Open the live HTML artifact URL.</div>
+          </div>
+        </div>
+        <div class="demo-phase">
+          <div class="demo-time">1:00 – 2:00</div>
+          <div>
+            <div class="demo-phase-title">Live Demo</div>
+            <div class="demo-phase-desc">Run the agent or automation right now — real input, real output, real time. Let it execute. Silence is powerful.</div>
+          </div>
+        </div>
+        <div class="demo-phase">
+          <div class="demo-time">2:00 – 3:00</div>
+          <div>
+            <div class="demo-phase-title">The Number That Matters</div>
+            <div class="demo-phase-desc">State the exact before/after. Name the task. Show side-by-side. Close with: "This is just one piece of my stack."</div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:12px 16px;background:rgba(245,200,66,0.06);border:1px solid rgba(245,200,66,0.2);border-radius:10px;font-size:12px;color:var(--muted);font-style:italic;line-height:1.6;">
+        "A live demo that stumbles and recovers is more powerful than a perfect screenshot. Mastery of the system — not perfection of the output."
+      </div>
+    </div>
+    <div class="showntell-right">
+      <div class="snt-card">
+        <div class="snt-emoji">🏆</div>
+        <div class="snt-title">Participants</div>
+        <div class="snt-desc">Social pressure sharpens the build. They leave with a live portfolio, a certificate, and a demo they can show any client.</div>
+      </div>
+      <div class="snt-card">
+        <div class="snt-emoji">💼</div>
+        <div class="snt-title">Clients watching their team</div>
+        <div class="snt-desc">Direct, undeniable proof the investment paid off. The HTML artifact is a deliverable they can see and share.</div>
+      </div>
+      <div class="snt-card">
+        <div class="snt-emoji">🎯</div>
+        <div class="snt-title">Prospects watching</div>
+        <div class="snt-desc">They see exactly what they're missing. Best top-of-funnel conversion moment that exists.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SLIDE 10 — WHO IT'S FOR
+============================================================ -->
+<div class="slide" id="s10">
+  <div class="who-single-layout slide-content">
+    <div>
+      <div class="tag tag-green" style="margin-bottom:14px">Built For</div>
+      <h2 style="font-size:36px;margin-bottom:8px">Marketers ready to stop<br/>dabbling and start building.</h2>
+      <div class="divider divider-green"></div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px">No prior AI experience required for the first cohorts. If you can use a browser and run a meeting, you can build this stack.</p>
+      <div class="who-prereq-box">
+        <div class="wpb-label">Prerequisites</div>
+        <div class="wpb-text">No prior AI experience required. Comfort with basic digital tools (email, Google Workspace, Slack) is enough to start.</div>
+      </div>
+      <div class="who-not-box">
+        <div class="wnb-label">Not a fit if</div>
+        <div class="wnb-text">You're looking for a certification course with no hands-on work, or you need a fully managed AI solution built for you.</div>
+      </div>
+    </div>
+    <div class="who-profiles">
+      <div class="who-profile">
+        <div class="who-profile-icon">📣</div>
+        <div>
+          <div class="who-profile-role">Content, Brand &amp; Growth Marketers</div>
+          <div class="who-profile-desc">Build automated content pipelines, brand voice agents, and performance dashboards that run without you.</div>
+        </div>
+      </div>
+      <div class="who-profile">
+        <div class="who-profile-icon">🏢</div>
+        <div>
+          <div class="who-profile-role">Marketing Consultants &amp; Agency Teams</div>
+          <div class="who-profile-desc">Deliver more to clients with a fraction of the manual effort. Add AI operator services to your offering.</div>
+        </div>
+      </div>
+      <div class="who-profile">
+        <div class="who-profile-icon">🚀</div>
+        <div>
+          <div class="who-profile-role">Entrepreneurs &amp; Small Teams</div>
+          <div class="who-profile-desc">Compete like a team of ten. Build a marketing stack that scales without headcount.</div>
+        </div>
+      </div>
+      <div class="who-profile">
+        <div class="who-profile-icon">💻</div>
+        <div>
+          <div class="who-profile-role">Web &amp; Front-End Professionals</div>
+          <div class="who-profile-desc">Add AI artifact generation to your stack. Build for clients faster, bill for what AI helps you ship.</div>
+        </div>
+      </div>
+      <div class="who-profile">
+        <div class="who-profile-icon">🔧</div>
+        <div>
+          <div class="who-profile-role">Operations &amp; Sales Teams</div>
+          <div class="who-profile-desc">Automate the repetitive, capture the institutional knowledge, and free up time for the work that matters.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SLIDE 11 — THE FLYWHEEL
+============================================================ -->
+<div class="slide" id="s11">
+  <div class="flywheel-layout slide-content">
+    <div>
+      <div class="tag tag-gold" style="margin-bottom:16px">The Growth Engine</div>
+      <h2 style="font-size:34px;margin-bottom:10px">Week 4 Show &amp; Tell:<br/>More than graduation.</h2>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:24px">Every cohort ends with a live public demo. It's not a celebration. It's a sales event that markets the next cohort.</p>
+      <div class="flywheel-benefits">
+        <div class="fb-item">
+          <span class="fb-emoji">🏆</span>
+          <div>
+            <div class="fb-title">Participants</div>
+            <div class="fb-desc">Social pressure sharpens the build. They leave with a live portfolio, a certificate, and a demo they can show any client.</div>
+          </div>
+        </div>
+        <div class="fb-item">
+          <span class="fb-emoji">💼</span>
+          <div>
+            <div class="fb-title">Clients watching their team</div>
+            <div class="fb-desc">Direct, undeniable proof the investment paid off. The HTML artifact is a deliverable they can see and share.</div>
+          </div>
+        </div>
+        <div class="fb-item">
+          <span class="fb-emoji">🎯</span>
+          <div>
+            <div class="fb-title">Prospects watching</div>
+            <div class="fb-desc">They see exactly what they're missing. Best top-of-funnel conversion moment that exists.</div>
+          </div>
+        </div>
+        <div class="fb-item">
+          <span class="fb-emoji">📣</span>
+          <div>
+            <div class="fb-title">Talent Scout</div>
+            <div class="fb-desc">Every cohort generates footage, testimonials, case studies, and live artifacts for the next cohort's marketing.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="flywheel-visual">
+      <div class="circle-outer">
+        <div class="fw-node"><div class="fw-node-emoji">🏗️</div>Build</div>
+        <div class="fw-node"><div class="fw-node-emoji">🎤</div>Demo</div>
+        <div class="fw-node"><div class="fw-node-emoji">📣</div>Market</div>
+        <div class="fw-node"><div class="fw-node-emoji">🔄</div>Enroll</div>
+        <div class="circle-inner">
+          <span>♾️</span>
+          Cohort<br/>Flywheel
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SLIDE 12 — CTA
+============================================================ -->
+<div class="slide" id="s12">
+  <div class="cta-inner slide-content">
+    <div class="tag tag-green" style="margin-bottom:24px;display:inline-flex">🚀 Ready to Launch</div>
+    <h1 class="cta-title">One program.<br/><span>Built to run.</span></h1>
+    <p class="cta-sub">
+      The curriculum is locked. The stack is proven. The instructor is ready.<br/>
+      All that's left is opening the doors.
+    </p>
+    <div class="cta-single-box">
+      <div class="csb-label">The AI Operator Cohort</div>
+      <div class="csb-title">The signature program.</div>
+      <div class="csb-desc">The complete Marketing Operator Stack. Open to applications — direct outreach to Talent Scout clients and individual marketers across LATAM and US placement. Show &amp; Tell flywheel kicks in from Cohort 1.</div>
+      <div class="csb-stats">
+        <div class="csb-stat"><strong>4</strong>Weeks</div>
+        <div class="csb-stat"><strong>16</strong>Live Hours</div>
+        <div class="csb-stat"><strong>8</strong>Sessions</div>
+      </div>
+    </div>
+    <div class="tags-row">
+      <span class="tag tag-green">✓ Curriculum locked</span>
+      <span class="tag tag-purple">✓ Instructor ready</span>
+      <span class="tag tag-gold">✓ Stack proven</span>
+      <span class="tag tag-red">✓ First cohort focus</span>
+    </div>
+    <p class="cta-footer">
+      <strong>Talent Scout</strong> brings the platform, clients &amp; brand. &nbsp;·&nbsp;
+      <strong>Felipe Salgado</strong> delivers the world-class instruction.
+    </p>
+  </div>
+</div>
+
+</div><!-- end .deck -->
+
+<!-- Navigation -->
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="goTo(currentSlide - 1)" disabled>←</button>
+  <div class="nav-dots" id="dots"></div>
+  <button class="nav-btn" id="nextBtn" onclick="goTo(currentSlide + 1)">→</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const totalEl = document.getElementById('total');
+  const currentEl = document.getElementById('current');
+  const dotsEl = document.getElementById('dots');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  let currentSlide = 0;
+  totalEl.textContent = slides.length;
+
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsEl.appendChild(d);
+  });
+
+  function goTo(n) {
+    if (n < 0 || n >= slides.length) return;
+    slides[currentSlide].classList.remove('active');
+    slides[currentSlide].classList.add('exit-left');
+    setTimeout(() => slides[currentSlide].classList.remove('exit-left'), 550);
+    currentSlide = n;
+    slides[currentSlide].classList.add('active');
+    document.querySelectorAll('.nav-dot').forEach((d, i) => d.classList.toggle('active', i === currentSlide));
+    currentEl.textContent = currentSlide + 1;
+    prevBtn.disabled = currentSlide === 0;
+    nextBtn.disabled = currentSlide === slides.length - 1;
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') goTo(currentSlide + 1);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goTo(currentSlide - 1);
+  });
+
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50) goTo(currentSlide + (dx < 0 ? 1 : -1));
+  });
+</script>
+</body>
+</html>
